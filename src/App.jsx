@@ -22,6 +22,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import LanguageSelect from "@/pages/LanguageSelect";
 import { LanguageProvider, useTranslation } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
+import LoginPage from '@/components/auth/LoginPage';
 
 const AppGate = () => {
   const { hasLang } = useTranslation();
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
+      <Route path="/login" element={<LoginPage />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/assessment" element={<Assessment />} />
@@ -63,7 +65,7 @@ const AuthenticatedApp = () => {
         <Route path="/history" element={<History />} />
         <Route path="/admin" element={<Admin />} />
       </Route>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login-password" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

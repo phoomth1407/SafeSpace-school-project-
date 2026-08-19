@@ -1,9 +1,22 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { createClient as _createSupabase } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient as _createShim } from 'npm:@staticbot/base44-supabase-shim';
 import { containsProfanity, getProfanityError } from "../../shared/profanity.ts";
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req);
+    const _supabaseClient = _createSupabase(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } }
+    );
+    const base44 = _createShim({
+      supabaseUrl: Deno.env.get('SUPABASE_URL')!,
+      supabaseAnonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
+      supabaseServiceRoleKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      schemaPrefix: 'public',
+      entityMap: {"Assessment":{"schema":"public","table":"assessments"},"CommunityComment":{"schema":"public","table":"community_comments"},"CommunityPost":{"schema":"public","table":"community_posts"},"EmergencyResource":{"schema":"public","table":"emergency_resources"},"GuestAssessment":{"schema":"public","table":"guest_assessments"}},
+      client: _supabaseClient,
+    });
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.banned) return Response.json({ error: 'banned' }, { status: 403 });
