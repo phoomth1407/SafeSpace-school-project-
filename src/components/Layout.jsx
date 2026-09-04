@@ -12,7 +12,7 @@ export default function Layout() {
   const { isAuthenticated, logout, user } = useAuth();
   const { t, lang, setLang } = useTranslation();
   const { theme, toggle } = useTheme();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.user_metadata?.role === "admin" || user?.app_metadata?.role === "admin" || user?.role === "admin";
   const [langOpen, setLangOpen] = useState(false);
 
   const navItems = [
@@ -29,7 +29,6 @@ export default function Layout() {
 
   return (
     <div className={cn("min-h-screen bg-slate-950", theme === "light" && "theme-light")}>
-      {/* Top bar */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
@@ -60,7 +59,6 @@ export default function Layout() {
               })}
             </nav>
 
-            {/* Theme toggle */}
             <button
               onClick={toggle}
               title={t("theme.toggle")}
@@ -69,7 +67,6 @@ export default function Layout() {
               {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Language switcher */}
             <div className="relative">
               <button
                 onClick={() => setLangOpen(!langOpen)}
@@ -80,23 +77,12 @@ export default function Layout() {
               </button>
               {langOpen && (
                 <div className="absolute right-0 mt-1 w-28 bg-slate-900 border border-slate-800 rounded-xl shadow-xl py-1 z-50">
-                  <button
-                    onClick={() => { setLang("th"); setLangOpen(false); }}
-                    className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-slate-800", lang === "th" ? "text-rose-300" : "text-slate-300")}
-                  >
-                    ภาษาไทย
-                  </button>
-                  <button
-                    onClick={() => { setLang("en"); setLangOpen(false); }}
-                    className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-slate-800", lang === "en" ? "text-rose-300" : "text-slate-300")}
-                  >
-                    English
-                  </button>
+                  <button onClick={() => { setLang("th"); setLangOpen(false); }} className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-slate-800", lang === "th" ? "text-rose-300" : "text-slate-300")}>ภาษาไทย</button>
+                  <button onClick={() => { setLang("en"); setLangOpen(false); }} className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-slate-800", lang === "en" ? "text-rose-300" : "text-slate-300")}>English</button>
                 </div>
               )}
             </div>
 
-            {/* Auth buttons */}
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 {isAdmin && (
@@ -104,9 +90,7 @@ export default function Layout() {
                     to="/admin"
                     className={cn(
                       "flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-colors",
-                      location.pathname === "/admin"
-                        ? "bg-slate-100 text-slate-900"
-                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                      location.pathname === "/admin" ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                     )}
                   >
                     <Shield className="w-3.5 h-3.5" />
@@ -114,29 +98,20 @@ export default function Layout() {
                   </Link>
                 )}
                 <span className="hidden sm:block text-xs text-slate-500 max-w-[120px] truncate">
-                  {user?.full_name || user?.email}
+                  {user?.user_metadata?.full_name || user?.full_name || user?.email}
                 </span>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1 text-xs text-slate-400 px-3 py-1.5 rounded-full hover:bg-slate-800 hover:text-slate-200 transition-colors"
-                >
+                <button onClick={handleLogout} className="flex items-center gap-1 text-xs text-slate-400 px-3 py-1.5 rounded-full hover:bg-slate-800 hover:text-slate-200 transition-colors">
                   <LogOut className="w-3.5 h-3.5" />
                   {t("nav.logout")}
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-1.5">
-                <Link
-                  to="/login"
-                  className="flex items-center gap-1 text-xs text-slate-400 px-3 py-1.5 rounded-full hover:bg-slate-800 hover:text-slate-200 transition-colors"
-                >
+                <Link to="/login" className="flex items-center gap-1 text-xs text-slate-400 px-3 py-1.5 rounded-full hover:bg-slate-800 hover:text-slate-200 transition-colors">
                   <LogIn className="w-3.5 h-3.5" />
                   {t("nav.login")}
                 </Link>
-                <Link
-                  to="/register"
-                  className="flex items-center gap-1 text-xs text-slate-900 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-white transition-colors"
-                >
+                <Link to="/register" className="flex items-center gap-1 text-xs text-slate-900 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-white transition-colors">
                   <UserPlus className="w-3.5 h-3.5" />
                   {t("nav.register")}
                 </Link>
@@ -150,21 +125,13 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Bottom nav for mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800">
         <div className="flex items-center justify-around h-16">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors",
-                  active ? "text-slate-100" : "text-slate-500"
-                )}
-              >
+              <Link key={item.to} to={item.to} className={cn("flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors", active ? "text-slate-100" : "text-slate-500")}>
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
