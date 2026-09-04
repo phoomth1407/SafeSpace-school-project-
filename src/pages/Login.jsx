@@ -7,7 +7,10 @@ import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
-import { signInWithPassword, getOAuthUrl, storeSession, supabaseConfigured } from "@/lib/supabaseClient";
+import { AUTH_REDIRECT_URL, getOAuthUrl, signInWithPassword, storeSession, supabaseConfigured } from "@/lib/supabaseClient";
+
+// Enable this after Google is configured in Supabase Authentication > Providers.
+const GOOGLE_OAUTH_ENABLED = false;
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -32,9 +35,13 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    const url = getOAuthUrl("google", window.location.origin + "/SafeSpace-school-project-/login");
+    if (!GOOGLE_OAUTH_ENABLED) {
+      setError("Google sign-in is not enabled in the Supabase project yet. Please use email and password for now.");
+      return;
+    }
+    const url = getOAuthUrl("google", AUTH_REDIRECT_URL);
     if (!url) {
-      setError("Supabase is not configured yet. The site owner needs to add the Supabase environment variables.");
+      setError("Supabase is not configured yet.");
       return;
     }
     sessionStorage.setItem("safespace_auth_return_to", returnTo || "/");
@@ -55,7 +62,7 @@ export default function Login() {
         </>
       }
     >
-      <Button variant="outline" className="w-full h-12 text-sm font-medium mb-6" onClick={handleGoogle} disabled={!supabaseConfigured}>
+      <Button variant="outline" className="w-full h-12 text-sm font-medium mb-6" onClick={handleGoogle} disabled={!supabaseConfigured || !GOOGLE_OAUTH_ENABLED}>
         <GoogleIcon className="w-5 h-5 mr-2" />
         Continue with Google
       </Button>
