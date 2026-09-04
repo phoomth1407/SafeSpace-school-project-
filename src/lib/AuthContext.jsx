@@ -14,6 +14,14 @@ import {
 const AuthContext = createContext();
 const APP_PREFIX = '/SafeSpace-school-project-';
 
+function withRole(user) {
+  if (!user) return user;
+  return {
+    ...user,
+    role: user?.user_metadata?.role || user?.app_metadata?.role || null,
+  };
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,8 +51,6 @@ export const AuthProvider = ({ children }) => {
         });
       }
 
-      // Client-only Supabase auth returns access/refresh tokens in the URL hash after
-      // email confirmation, Google OAuth, and password recovery.
       const urlSession = getAuthTokensFromUrl();
       if (urlSession?.access_token) {
         storeSession(urlSession);
@@ -72,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const currentUser = await getCurrentUser(session.access_token);
-      setUser(currentUser);
+      setUser(withRole(currentUser));
       setIsAuthenticated(true);
     } catch (error) {
       storeSession(null);
