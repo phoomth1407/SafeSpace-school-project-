@@ -1,5 +1,13 @@
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '') || '';
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+// Supabase publishable keys are safe to use in browser code.
+// Environment variables can override these defaults for local/custom deployments.
+const SUPABASE_URL = (
+  import.meta.env.VITE_SUPABASE_URL || 'https://rixigicvtaldlpsrwlph.supabase.co'
+).replace(/\/$/, '');
+
+const SUPABASE_KEY = (
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  'sb_publishable_K5JnEZEbxBzzOkapVdNWgA_0V1pqt7q'
+);
 
 export const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
