@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import {
   clearAuthHash,
+  getAuthErrorFromUrl,
   getAuthTokensFromUrl,
   getCurrentUser,
   getStoredSession,
@@ -31,7 +32,19 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
 
     try {
-      // Supabase implicit OAuth/password-recovery redirects return tokens in the URL hash.
+      const urlError = getAuthErrorFromUrl();
+      if (urlError) {
+        clearAuthHash();
+        setAuthError({
+          type: 'auth_required',
+          message: urlError.errorCode === 'otp_expired'
+            ? 'That email link has expired or was already used. Request a new confirmation email.'
+            : urlError.message,
+        });
+      }
+
+      // Client-only Supabase auth returns access/refresh tokens in the URL hash after
+      // email confirmation, Google OAuth, and password recovery.
       const urlSession = getAuthTokensFromUrl();
       if (urlSession?.access_token) {
         storeSession(urlSession);
@@ -52,7 +65,6 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Refresh shortly before expiry so users stay signed in between visits.
       const expiresAt = Number(session.expires_at || 0);
       if (session.refresh_token && expiresAt && expiresAt < Math.floor(Date.now() / 1000) + 60) {
         session = await refreshSession(session.refresh_token);
@@ -66,10 +78,10 @@ export const AuthProvider = ({ children }) => {
       storeSession(null);
       setUser(null);
       setIsAuthenticated(false);
-      if (supabaseConfigured) {
+      if (supabaseConfigured && !authError) {
         setAuthError({
           type: 'auth_required',
-          message: 'Your session has expired. Please log in again.',
+          message: error?.message || 'Your session has expired. Please log in again.',
         });
       }
     } finally {
