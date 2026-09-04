@@ -9,8 +9,8 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { AUTH_REDIRECT_URL, getOAuthUrl, signInWithPassword, storeSession, supabaseConfigured } from "@/lib/supabaseClient";
 
-// Enable this after Google is configured in Supabase Authentication > Providers.
-const GOOGLE_OAUTH_ENABLED = false;
+// Google OAuth has been configured in the Supabase project.
+const GOOGLE_OAUTH_ENABLED = true;
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -35,10 +35,7 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    if (!GOOGLE_OAUTH_ENABLED) {
-      setError("Google sign-in is not enabled in the Supabase project yet. Please use email and password for now.");
-      return;
-    }
+    setError("");
     const url = getOAuthUrl("google", AUTH_REDIRECT_URL);
     if (!url) {
       setError("Supabase is not configured yet.");
