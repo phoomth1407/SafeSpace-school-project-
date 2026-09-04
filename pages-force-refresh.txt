@@ -1,0 +1,1 @@
+GitHub Pages redeployment marker. This file forces a fresh Pages deployment after the Pages configuration is confirmed.
