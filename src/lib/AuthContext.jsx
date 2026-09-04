@@ -1,13 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import {
+  clearAuthHash,
+  getAuthTokensFromUrl,
   getCurrentUser,
   getStoredSession,
+  refreshSession,
   signOut,
   storeSession,
   supabaseConfigured,
 } from '@/lib/supabaseClient';
 
 const AuthContext = createContext();
+const APP_PREFIX = '/SafeSpace-school-project-';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -25,17 +29,36 @@ export const AuthProvider = ({ children }) => {
   const checkUserAuth = async () => {
     setIsLoadingAuth(true);
     setAuthError(null);
-    const session = getStoredSession();
-
-    if (!session?.access_token) {
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-      return;
-    }
 
     try {
+      // Supabase implicit OAuth/password-recovery redirects return tokens in the URL hash.
+      const urlSession = getAuthTokensFromUrl();
+      if (urlSession?.access_token) {
+        storeSession(urlSession);
+        clearAuthHash();
+
+        const authReturnTo = sessionStorage.getItem('safespace_auth_return_to');
+        if (authReturnTo) sessionStorage.removeItem('safespace_auth_return_to');
+        if (authReturnTo && window.location.pathname.endsWith('/login')) {
+          window.location.href = authReturnTo;
+          return;
+        }
+      }
+
+      let session = getStoredSession();
+      if (!session?.access_token) {
+        setUser(null);
+        setIsAuthenticated(false);
+        return;
+      }
+
+      // Refresh shortly before expiry so users stay signed in between visits.
+      const expiresAt = Number(session.expires_at || 0);
+      if (session.refresh_token && expiresAt && expiresAt < Math.floor(Date.now() / 1000) + 60) {
+        session = await refreshSession(session.refresh_token);
+        storeSession(session);
+      }
+
       const currentUser = await getCurrentUser(session.access_token);
       setUser(currentUser);
       setIsAuthenticated(true);
@@ -43,8 +66,11 @@ export const AuthProvider = ({ children }) => {
       storeSession(null);
       setUser(null);
       setIsAuthenticated(false);
-      if (supabaseConfigured && (error.status === 401 || error.status === 403)) {
-        setAuthError({ type: 'auth_required', message: 'Your session has expired. Please log in again.' });
+      if (supabaseConfigured) {
+        setAuthError({
+          type: 'auth_required',
+          message: 'Your session has expired. Please log in again.',
+        });
       }
     } finally {
       setIsLoadingAuth(false);
@@ -62,13 +88,14 @@ export const AuthProvider = ({ children }) => {
       storeSession(null);
       setUser(null);
       setIsAuthenticated(false);
-      window.location.href = '/SafeSpace-school-project-/';
+      window.location.href = `${APP_PREFIX}/`;
     }
   };
 
   const navigateToLogin = () => {
-    const returnTo = window.location.href;
-    window.location.href = `/SafeSpace-school-project-/login?returnTo=${encodeURIComponent(returnTo)}`;
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+    sessionStorage.setItem('safespace_auth_return_to', returnTo || '/');
+    window.location.href = `${APP_PREFIX}/login?returnTo=${encodeURIComponent(returnTo || '/')}`;
   };
 
   return (
