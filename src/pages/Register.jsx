@@ -7,7 +7,10 @@ import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
-import { getOAuthUrl, signUpWithPassword, supabaseConfigured } from "@/lib/supabaseClient";
+import { AUTH_REDIRECT_URL, getOAuthUrl, signUpWithPassword, supabaseConfigured } from "@/lib/supabaseClient";
+
+// Google OAuth must first be enabled/configured in the Supabase dashboard.
+const GOOGLE_OAUTH_ENABLED = false;
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -28,13 +31,12 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const redirectTo = `${window.location.origin}/SafeSpace-school-project-/login`;
-      const result = await signUpWithPassword(email, password, redirectTo);
+      const result = await signUpWithPassword(email, password, AUTH_REDIRECT_URL);
       if (result.access_token) {
         localStorage.setItem("safespace_session", JSON.stringify(result));
         window.location.href = returnTo;
       } else {
-        setMessage("Account created. Check your email to confirm your account, then log in.");
+        setMessage("Account created. Check your email to confirm your account, then return here to log in.");
       }
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -44,7 +46,11 @@ export default function Register() {
   };
 
   const handleGoogle = () => {
-    const url = getOAuthUrl("google", window.location.origin + "/SafeSpace-school-project-/login");
+    if (!GOOGLE_OAUTH_ENABLED) {
+      setError("Google sign-in is not enabled in the Supabase project yet. Email and password sign-in are ready to use.");
+      return;
+    }
+    const url = getOAuthUrl("google", AUTH_REDIRECT_URL);
     if (!url) setError("Supabase is not configured yet.");
     else window.location.href = url;
   };
@@ -56,7 +62,7 @@ export default function Register() {
       subtitle="Sign up to get started"
       footer={<><>Already have an account?{" "}</><Link to={"/login" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")} className="text-primary font-medium hover:underline">Log in</Link></>}
     >
-      <Button variant="outline" className="w-full h-12 text-sm font-medium mb-6" onClick={handleGoogle} disabled={!supabaseConfigured}>
+      <Button variant="outline" className="w-full h-12 text-sm font-medium mb-6" onClick={handleGoogle} disabled={!supabaseConfigured || !GOOGLE_OAUTH_ENABLED}>
         <GoogleIcon className="w-5 h-5 mr-2" />Continue with Google
       </Button>
 
