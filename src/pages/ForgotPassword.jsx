@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import { requestPasswordReset, supabaseConfigured } from "@/lib/supabaseClient";
+import { AUTH_REDIRECT_URL, requestPasswordReset, supabaseConfigured } from "@/lib/supabaseClient";
+
+const RESET_REDIRECT_URL = AUTH_REDIRECT_URL.replace('/login', '/reset-password');
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -18,13 +20,12 @@ export default function ForgotPassword() {
     setError("");
     setLoading(true);
     try {
-      const redirectTo = `${window.location.origin}/SafeSpace-school-project-/reset-password`;
-      await requestPasswordReset(email, redirectTo);
+      await requestPasswordReset(email, RESET_REDIRECT_URL);
+      setSent(true);
     } catch (err) {
       setError(err.message || "Unable to send reset email");
     } finally {
       setLoading(false);
-      setSent(true);
     }
   };
 
@@ -44,7 +45,7 @@ export default function ForgotPassword() {
           <p className="text-sm text-foreground">
             If an account exists with that email, you'll receive a password reset link shortly.
           </p>
-          {error && <p className="text-xs text-muted-foreground">The email service may need to be enabled in the Supabase project.</p>}
+          <p className="text-xs text-muted-foreground">Open the newest email on the same device to finish the reset.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
