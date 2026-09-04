@@ -159,3 +159,44 @@ export function getOAuthUrl(provider, redirectTo = AUTH_REDIRECT_URL) {
   });
   return `${SUPABASE_URL}/auth/v1/authorize?${params.toString()}`;
 }
+
+export async function invokeAssessmentAI({ answers, language, age, nationality, token }) {
+  if (!supabaseConfigured) throw new Error('Supabase is not configured yet.');
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-assessment`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ answers, language, age, nationality }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error || 'AI analysis failed.');
+  return data;
+}
+
+export async function saveAssessmentResponse({ result, answers, age, nationality, token, userId }) {
+  if (!token || !userId) return null;
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/assessment_responses`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      Prefer: 'return=representation',
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      age: Number.isFinite(Number(age)) ? Number(age) : null,
+      age_group: Number(age) < 20 ? 'under20' : 'over20',
+      nationality: nationality === 'foreigner' ? 'foreigner' : 'thai',
+      answers,
+      risk_level: result.risk_level,
+      risk_score: result.risk_score,
+      ai_summary: result.ai_summary,
+      recommendations: result.recommendations || [],
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.message || data?.hint || 'Could not save assessment result.');
+  return Array.isArray(data) ? data[0] : data;
+}
