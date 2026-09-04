@@ -23,6 +23,8 @@ import LanguageSelect from "@/pages/LanguageSelect";
 import { LanguageProvider, useTranslation } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 
+const GITHUB_PAGES_BASENAME = '/SafeSpace-school-project-';
+
 const AppGate = () => {
   const { hasLang } = useTranslation();
   if (!hasLang) return <LanguageSelect />;
@@ -80,7 +82,7 @@ function App() {
     <ThemeProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
+        <Router basename={GITHUB_PAGES_BASENAME}>
           <ScrollToTop />
           <AppGate />
         </Router>
