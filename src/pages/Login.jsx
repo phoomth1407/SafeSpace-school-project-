@@ -37,6 +37,7 @@ export default function Login() {
       setError("Supabase is not configured yet. The site owner needs to add the Supabase environment variables.");
       return;
     }
+    sessionStorage.setItem("safespace_auth_return_to", returnTo || "/");
     window.location.href = url;
   };
 
