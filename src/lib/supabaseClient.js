@@ -1,5 +1,7 @@
-// Supabase publishable keys are safe to use in browser code.
-// Environment variables can override these defaults for local/custom deployments.
+// Browser-safe Supabase configuration.
+// Publishable keys may be used in browser code. Never put a secret/service key here.
+const DEFAULT_APP_URL = 'https://phoomth1407.github.io/SafeSpace-school-project-';
+
 const SUPABASE_URL = (
   import.meta.env.VITE_SUPABASE_URL || 'https://rixigicvtaldlpsrwlph.supabase.co'
 ).replace(/\/$/, '');
@@ -10,6 +12,7 @@ const SUPABASE_KEY = (
 );
 
 export const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
+export const AUTH_REDIRECT_URL = `${DEFAULT_APP_URL}/login`;
 
 const authHeaders = (token) => ({
   apikey: SUPABASE_KEY,
@@ -54,13 +57,13 @@ export async function signInWithPassword(email, password) {
   }));
 }
 
-export async function signUpWithPassword(email, password, emailRedirectTo) {
+export async function signUpWithPassword(email, password, emailRedirectTo = AUTH_REDIRECT_URL) {
   return normalizeSession(await supabaseAuth('/signup', {
     method: 'POST',
     body: JSON.stringify({
       email,
       password,
-      ...(emailRedirectTo ? { options: { email_redirect_to: emailRedirectTo } } : {}),
+      options: { email_redirect_to: emailRedirectTo },
     }),
   }));
 }
@@ -76,13 +79,10 @@ export async function getCurrentUser(token) {
   return supabaseAuth('/user', { method: 'GET', token });
 }
 
-export async function requestPasswordReset(email, redirectTo) {
+export async function requestPasswordReset(email, redirectTo = AUTH_REDIRECT_URL) {
   return supabaseAuth('/recover', {
     method: 'POST',
-    body: JSON.stringify({
-      email,
-      ...(redirectTo ? { redirect_to: redirectTo } : {}),
-    }),
+    body: JSON.stringify({ email, redirect_to: redirectTo }),
   });
 }
 
@@ -128,12 +128,27 @@ export function getAuthTokensFromUrl() {
   });
 }
 
+export function getAuthErrorFromUrl() {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return null;
+  const params = new URLSearchParams(hash);
+  const error = params.get('error');
+  const errorCode = params.get('error_code');
+  const description = params.get('error_description');
+  if (!error && !errorCode && !description) return null;
+  return {
+    error,
+    errorCode,
+    message: description || errorCode || error || 'Authentication failed',
+  };
+}
+
 export function clearAuthHash() {
   if (!window.location.hash) return;
   window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
 }
 
-export function getOAuthUrl(provider, redirectTo) {
+export function getOAuthUrl(provider, redirectTo = AUTH_REDIRECT_URL) {
   if (!supabaseConfigured) return null;
   const params = new URLSearchParams({
     provider,
