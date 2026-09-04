@@ -42,17 +42,16 @@ if (originalInvoke) {
   };
 }
 
-// The old Admin page asked Base44 for assessment records. Replace that one read with
-// Supabase data when an authenticated admin loads the page.
 const originalAssessmentList = client.entities?.Assessment?.list?.bind(client.entities.Assessment);
 if (originalAssessmentList) {
   client.entities.Assessment.list = async (...args) => {
     try {
       const session = getStoredSession();
-      if (!session?.access_token) return [];
-      const user = await supabaseAuth('/user', { method: 'GET', token: session.access_token });
-      const role = user?.user_metadata?.role || user?.app_metadata?.role;
-      if (role === 'admin') return await listAssessmentResponses(200);
+      if (session?.access_token) {
+        const user = await supabaseAuth('/user', { method: 'GET', token: session.access_token });
+        const role = user?.user_metadata?.role || user?.app_metadata?.role;
+        if (role === 'admin') return await listAssessmentResponses(200);
+      }
     } catch (error) {
       console.warn('Supabase assessment read failed; falling back to Base44:', error);
     }
@@ -60,10 +59,16 @@ if (originalAssessmentList) {
   };
 }
 
-// Guest assessments are intentionally not exposed through the admin migration.
-// Guest mode remains non-persistent from the admin data perspective.
+// These datasets are not migrated yet. Returning empty arrays keeps the new Admin dashboard
+// usable while assessment data is moved to Supabase.
 if (client.entities?.GuestAssessment?.list) {
   client.entities.GuestAssessment.list = async () => [];
+}
+if (client.entities?.CommunityPost?.list) {
+  client.entities.CommunityPost.list = async () => [];
+}
+if (client.entities?.User?.list) {
+  client.entities.User.list = async () => [];
 }
 
 export const base44 = client;
