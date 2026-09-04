@@ -12,7 +12,9 @@ const SUPABASE_KEY = (
 );
 
 export const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
-export const AUTH_REDIRECT_URL = `${DEFAULT_APP_URL}/login`;
+// Use the GitHub Pages app root for auth callbacks so OAuth never lands on a
+// direct /login URL that GitHub Pages may treat as a missing static file.
+export const AUTH_REDIRECT_URL = `${DEFAULT_APP_URL}/`;
 
 const authHeaders = (token) => ({
   apikey: SUPABASE_KEY,
